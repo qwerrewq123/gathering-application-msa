@@ -1,8 +1,10 @@
 package com.apigatewayservice.filter;
 
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtParser;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
@@ -20,6 +22,7 @@ import reactor.core.publisher.Mono;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
+import java.security.Key;
 import java.util.Base64;
 
 @Component
@@ -66,28 +69,37 @@ public class AuthorizationHeaderFilter extends AbstractGatewayFilterFactory<Auth
         return response.writeWith(Flux.just(buffer));
     }
 
-    private boolean isJwtValid(String jwt) {
-        byte[] secretKeyBytes = Base64.getEncoder().encode(env.getProperty("token.secret").getBytes());
-        SecretKey signingKey = new SecretKeySpec(secretKeyBytes, SignatureAlgorithm.HS512.getJcaName());
+    private boolean isJwtValid(String token) {
 
-        boolean returnValue = true;
-        String subject = null;
+        return getUsername(token) == null ? false : true;
+    }
 
-        try {
-            JwtParser jwtParser = Jwts.parserBuilder()
-                    .setSigningKey(signingKey)
-                    .build();
+    private String getUsername(String token){
 
-            subject = jwtParser.parseClaimsJws(jwt).getBody().getSubject();
-        } catch (Exception ex) {
-            returnValue = false;
+        Claims claims = null;
+        String subject =null;
+
+        Key key = Keys.hmacShaKeyFor(env.getProperty("token.secret").getBytes(StandardCharsets.UTF_8)) ;
+
+
+        try{
+
+            claims = Jwts.parserBuilder().setSigningKey(key)
+                    .build()
+                    .parseClaimsJws(token).getBody();
+
+            subject = claims.getSubject();
+
+
+        } catch(Exception exception){
+            exception.printStackTrace();
+            return null;
+
         }
 
-        if (subject == null || subject.isEmpty()) {
-            returnValue = false;
-        }
+        return subject;
 
-        return returnValue;
+
     }
 
 }

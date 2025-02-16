@@ -12,6 +12,7 @@ spring:
   config:
     activate:
       on-profile: default
+
   application:
     name: apigateway-service
 
@@ -36,16 +37,7 @@ spring:
         - id: user-service
           uri: lb://USER-SERVICE
           predicates:
-            - Path=/user-service/login
-            - Method=POST
-          filters:
-            - RemoveRequestHeader=Cookie
-            - RewritePath=/user-service/(?<segment>.*), /$\{segment}
-        - id: user-service
-          uri: lb://USER-SERVICE
-          predicates:
-            - Path=/user-service/users
-            - Method=POST
+            - Path=/user-service/auth/**
           filters:
             - RemoveRequestHeader=Cookie
             - RewritePath=/user-service/(?<segment>.*), /$\{segment}
@@ -60,32 +52,84 @@ spring:
         - id: user-service
           uri: lb://USER-SERVICE
           predicates:
-            - Path=/user-service/**
+            - Path=/user-service/user/**
+          filters:
+#            - RemoveRequestHeader=Cookie
+            - RewritePath=/user-service/(?<segment>.*), /$\{segment}
+            - AuthorizationHeaderFilter
+        - id: user-service
+          uri: lb://USER-SERVICE
+          predicates:
+            - Path=/user-service/users
+          filters:
+#            - RemoveRequestHeader=Cookie
+            - RewritePath=/user-service/(?<segment>.*), /$\{segment}
+            - AuthorizationHeaderFilter
+
+
+
+        - id: image-service
+          uri: lb://IMAGE-SERVICE
+          predicates:
+            - Path=/image-service/**
             - Method=GET
           filters:
             - RemoveRequestHeader=Cookie
-            - RewritePath=/user-service/(?<segment>.*), /$\{segment}
+            - RewritePath=/image-service/(?<segment>.*), /$\{segment}
             - AuthorizationHeaderFilter
-        - id: catalog-service
-          uri: lb://CATALOG-SERVICE
+        - id: image-service
+          uri: lb://IMAGE-SERVICE
           predicates:
-            - Path=/catalog-service/**
-        - id: order-service
-          uri: lb://ORDER-SERVICE
-          predicates:
-            - Path=/order-service/actuator/**
-            - Method=GET,POST
+            - Path=/image-service/**
+            - Method=POST
           filters:
             - RemoveRequestHeader=Cookie
-            - RewritePath=/order-service/(?<segment>.*), /$\{segment}
-        - id: order-service
-          uri: lb://ORDER-SERVICE
+            - RewritePath=/image-service/(?<segment>.*), /$\{segment}
+        - id: gathering-service
+          uri: lb://GATHERING-SERVICE
           predicates:
-            - Path=/order-service/**
+            - Path=/gathering-service/**
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/gathering-service/(?<segment>.*), /$\{segment}
+            - AuthorizationHeaderFilter
+        - id: category-service
+          uri: lb://CATEGORY-SERVICE
+          predicates:
+            - Path=/category-service/**
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/category-service/(?<segment>.*), /$\{segment}
+            - AuthorizationHeaderFilter
+        - id: like-service
+          uri: lb://LIKE-SERVICE
+          predicates:
+            - Path=/like-service/**
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/like-service/(?<segment>.*), /$\{segment}
+            - AuthorizationHeaderFilter
+        - id: meeting-service
+          uri: lb://MEETING-SERVICE
+          predicates:
+            - Path=/meeting-service/**
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/meeting-service/(?<segment>.*), /$\{segment}
+            - AuthorizationHeaderFilter
+        - id: alarm-service
+          uri: lb://ALARM-SERVICE
+          predicates:
+            - Path=/alarm-service/**
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/alarm-service/(?<segment>.*), /$\{segment}
+            - AuthorizationHeaderFilter
+
 
 
 token:
-  secret: user_token
+  secret: S3cr3tK3yS3cr3tK3yS3cr3tK3yS3cr3tK3yS3cr3tK3yS3cr3tK3y
 
 management:
   endpoints:
