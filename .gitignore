@@ -35,4 +35,13 @@ out/
 
 ### VS Code ###
 .vscode/
-aa
+api-gateway/src/main/resources/application.yml
+eureka-server/src/main/resources/application.yml
+service/user/src/main/resources/application.yml
+service/chat/src/main/resources/application.yml
+service/fcm/src/main/resources/application.yml
+service/gathering/src/main/resources/application.yml
+service/meeting/src/main/resources/application.yml
+service/recommend/src/main/resources/application.yml
+service/image/src/main/resources/application.yml
+service/image/src/main/resources/application-aws.yml
