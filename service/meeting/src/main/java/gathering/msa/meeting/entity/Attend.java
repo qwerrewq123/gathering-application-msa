@@ -17,8 +17,8 @@ import java.time.LocalDateTime;
 public class Attend {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    private Long shardKey;
     private Boolean accepted;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "meeting_id")
@@ -40,14 +40,6 @@ public class Attend {
     public void addMeeting(Meeting meeting){
         this.meeting = meeting;
     }
-//    public static Attend of(Meeting meeting, User user){
-//        return Attend.builder()
-//                .meeting(meeting)
-//                .date(LocalDateTime.now())
-//                .accepted(true)
-//                .attendBy(user)
-//                .build();
-//    }
 
 }
 

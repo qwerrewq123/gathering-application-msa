@@ -18,6 +18,7 @@ public class ChatRoom {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    private Long shardKey;
     @Column(nullable = false)
     private String name;
     @Column(name = "user_id")

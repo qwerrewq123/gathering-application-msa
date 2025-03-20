@@ -17,6 +17,7 @@ public class ReadStatus {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private Boolean status;
+    private Long shardKey;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "chat_participant_id")
     private ChatParticipant chatParticipant;

@@ -17,6 +17,7 @@ public class ChatParticipant {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    private Long shardKey;
     @Column(name = "user_id")
     private Long userId;
     @ManyToOne(fetch = FetchType.LAZY)

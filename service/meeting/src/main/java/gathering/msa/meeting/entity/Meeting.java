@@ -20,8 +20,8 @@ import java.util.List;
 public class Meeting {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    private Long shardKey;
     private String title;
     private LocalDateTime boardDate;
     private LocalDateTime startDate;
@@ -50,7 +50,7 @@ public class Meeting {
         return Meeting.builder()
                 .title(addMeetingRequest.getTitle())
                 .content(addMeetingRequest.getContent())
-                .user_id(userResponse.getId())
+                .userId(userResponse.getId())
                 .boardDate(LocalDateTime.now())
                 .startDate(addMeetingRequest.getStartDate())
                 .endDate(addMeetingRequest.getEndDate())

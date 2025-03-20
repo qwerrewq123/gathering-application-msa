@@ -17,8 +17,8 @@ import java.time.LocalDateTime;
 @Builder
 public class Enrollment {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    private Long shardKey;
     private Boolean accepted;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "gathering_id")
