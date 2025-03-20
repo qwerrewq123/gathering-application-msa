@@ -9,10 +9,10 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class ChatRoomResponsesElement {
+public class ChatRoomsResponseElement {
     private Long id;
     private String name;
     private int count;
-    private String createdBy;
+    private String username;
     private boolean status;
 }

@@ -8,14 +8,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
-import java.util.List;
-
 public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
     @Query("select new dto.response.chat." +
             "ChatRoomResponse(c.id,c.name,c.count,c.userId," +
             "case when cp.id is not null then true else false end) from ChatRoom c " +
             "left join ChatParticipant cp on cp.chatRoom.id == c.id " +
-            "where c.userId = :userId " +
+            "where cp.userId = :userId " +
             "order by case when cp.id is not null then 0 else 1 end, c.id asc")
     Page<ChatRoomResponse> fetchChatRooms(Pageable pageable, Long userId);
 
@@ -23,7 +21,8 @@ public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
             "ChatMyRoomResponse(c.id,c.name,c.count,c.userId,true,count(r.id)) " +
             "from ChatParticipant p join p.chatRoom c " +
             "left join ReadStatus r on r.chatParticipant.id = p.id and r.status=false " +
-            "where p.id = :userId " +
+            "where p.userId = :userId " +
             "group by c.id")
     Page<ChatMyRoomResponse> fetchMyChatRooms(Pageable pageable, Long userId);
+
 }

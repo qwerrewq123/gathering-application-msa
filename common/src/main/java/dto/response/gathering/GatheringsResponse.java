@@ -19,4 +19,6 @@ public class GatheringsResponse {
     private String createdBy;
     private String url;
     private int count;
+    private int viewCount;
+
 }

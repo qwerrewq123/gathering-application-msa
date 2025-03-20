@@ -13,5 +13,10 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class MeetingDisAttendEventPayload implements EventPayload {
-
+    private Long id;
+    private Long gatheringId;
+    private Boolean accepted;
+    private Long meetingId;
+    private Long userId;
+    private LocalDateTime date;
 }

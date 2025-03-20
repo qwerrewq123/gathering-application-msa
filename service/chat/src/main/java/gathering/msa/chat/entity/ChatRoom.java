@@ -1,6 +1,5 @@
 package gathering.msa.chat.entity;
 
-import dto.response.user.UserResponse;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -18,7 +17,6 @@ public class ChatRoom {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private Long shardKey;
     @Column(nullable = false)
     private String name;
     @Column(name = "user_id")
@@ -27,10 +25,10 @@ public class ChatRoom {
     public void changeCount(int count){
         this.count = count;
     }
-    public static ChatRoom of(String name, UserResponse userResponse){
+    public static ChatRoom of(String name,Long userId){
         return ChatRoom.builder()
                 .name(name)
-                .userId(userResponse.getId())
+                .userId(userId)
                 .count(1)
                 .build();
     }

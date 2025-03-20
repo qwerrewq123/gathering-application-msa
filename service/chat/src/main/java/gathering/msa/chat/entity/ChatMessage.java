@@ -17,7 +17,6 @@ public class ChatMessage {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private Long shardKey;
     private String content;
 
     @ManyToOne(fetch = FetchType.LAZY)

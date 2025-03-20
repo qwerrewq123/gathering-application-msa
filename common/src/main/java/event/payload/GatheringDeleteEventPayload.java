@@ -13,5 +13,11 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class GatheringDeleteEventPayload implements EventPayload {
-
+    private Long id;
+    private String title;
+    private String content;
+    private LocalDateTime registerDate;
+    private Long categoryId;
+    private Long userId;
+    private Long imageId;
 }

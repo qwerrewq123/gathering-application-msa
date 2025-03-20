@@ -6,6 +6,7 @@ import dto.response.image.SaveImageResponse;
 import dto.response.user.UserResponse;
 import jakarta.persistence.*;
 import lombok.*;
+import snowflake.Snowflake;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -21,7 +22,6 @@ public class Meeting {
 
     @Id
     private Long id;
-    private Long shardKey;
     private String title;
     private LocalDateTime boardDate;
     private LocalDateTime startDate;
@@ -35,19 +35,16 @@ public class Meeting {
     private Long gatheringId;
     @Column(name = "image_id")
     private Long imageId;
-    private int count;
 
-    public void changeCount(int count){
-        this.count = count;
-    }
     public void attend(List<Attend> attends){
         for (Attend attend : attends) {
             attend.addMeeting(this);
         }
         this.attends = attends;
     }
-    public static Meeting of(AddMeetingRequest addMeetingRequest, SaveImageResponse saveImageResponse, UserResponse userResponse, GatheringResponse gatheringResponse){
+    public static Meeting of(Snowflake snowflake,AddMeetingRequest addMeetingRequest, SaveImageResponse saveImageResponse, UserResponse userResponse, GatheringResponse gatheringResponse){
         return Meeting.builder()
+                .id(snowflake.nextId())
                 .title(addMeetingRequest.getTitle())
                 .content(addMeetingRequest.getContent())
                 .userId(userResponse.getId())
@@ -55,7 +52,6 @@ public class Meeting {
                 .startDate(addMeetingRequest.getStartDate())
                 .endDate(addMeetingRequest.getEndDate())
                 .gatheringId(gatheringResponse.getId())
-                .count(1)
                 .imageId(saveImageResponse.getIds().getFirst())
                 .build();
     }

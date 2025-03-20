@@ -1,11 +1,11 @@
 package dto.response.chat;
 
+import dto.response.like.LikeResponse;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -15,7 +15,10 @@ import java.util.List;
 public class ChatMyRoomsResponse {
     private String code;
     private String message;
+    private List<ChatMyRoomsResponseElement> elements;
     private boolean hasNext;
-    private List<ChatMyRoomsResponseElement> element = new ArrayList<>();
 
+    public static ChatMyRoomsResponse of(String code, String message, List<ChatMyRoomsResponseElement> elements, boolean hasNext) {
+        return new ChatMyRoomsResponse(code, message, elements, hasNext);
+    }
 }

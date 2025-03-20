@@ -21,9 +21,9 @@ public class ChatController {
     }
 
     @GetMapping("/chats")
-    public ResponseEntity<ChatRoomResponses> fetchChatRooms(@RequestParam Integer pageNum, @Username String username){
-        ChatRoomResponses chatRoomsResponses = chatService.fetchChatRooms(pageNum,username);
-        return new ResponseEntity<>(chatRoomsResponses, HttpStatus.OK);
+    public ResponseEntity<ChatRoomsResponse> fetchChatRooms(@RequestParam Integer pageNum, @Username String username){
+        ChatRoomsResponse chatRoomsResponse = chatService.fetchChatRooms(pageNum,username);
+        return new ResponseEntity<>(chatRoomsResponse, HttpStatus.OK);
     }
 
     @GetMapping("/chats/my")

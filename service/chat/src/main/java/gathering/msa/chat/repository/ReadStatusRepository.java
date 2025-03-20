@@ -12,4 +12,5 @@ public interface ReadStatusRepository extends JpaRepository<ReadStatus, Long> {
             "where r.chatParticipant.id = :chatParticipantId and r.chatMessage.id in :chatMessageIds and r.status=false")
     @Modifying
     void readChatMessage(Long chatParticipantId, List<Long> chatMessageIds);
+
 }

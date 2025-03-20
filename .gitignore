@@ -45,3 +45,4 @@ service/meeting/src/main/resources/application.yml
 service/recommend/src/main/resources/application.yml
 service/image/src/main/resources/application.yml
 service/image/src/main/resources/application-aws.yml
+service/fcm/src/main/resources

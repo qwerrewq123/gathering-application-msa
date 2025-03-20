@@ -18,8 +18,10 @@ import gathering.msa.gathering.client.UserServiceClient;
 import gathering.msa.gathering.entity.Category;
 import gathering.msa.gathering.entity.Enrollment;
 import gathering.msa.gathering.entity.Gathering;
+import gathering.msa.gathering.entity.GatheringCount;
 import gathering.msa.gathering.repository.CategoryRepository;
 import gathering.msa.gathering.repository.EnrollmentRepository;
+import gathering.msa.gathering.repository.GatheringCountRepository;
 import gathering.msa.gathering.repository.GatheringRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -30,6 +32,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
+import snowflake.Snowflake;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -50,8 +53,10 @@ public class GatheringService {
     private final GatheringRepository gatheringRepository;
     private final CategoryRepository categoryRepository;
     private final EnrollmentRepository enrollmentRepository;
+    private final GatheringCountRepository gatheringCountRepository;
     private final ImageServiceClient imageServiceClient;
     private final UserServiceClient userServiceClient;
+    private final Snowflake snowflake = new Snowflake();
 
     @Value("${server.url}")
     private String url;
@@ -64,9 +69,10 @@ public class GatheringService {
                 ()-> new NotFoundCategoryException("no exist Category!!"));
         SaveImageResponse saveImageResponse = imageServiceClient.saveImage(List.of(file),null);
         if(!saveImageResponse.getCode().equals(SUCCESS_CODE)) throw new ImageUploadFailException("image upload fail");
-        Gathering gathering = Gathering.of(addGatheringRequest,userResponse,category,saveImageResponse);
+        Gathering gathering = Gathering.of(snowflake,addGatheringRequest,userResponse,category,saveImageResponse);
         gatheringRepository.save(gathering);
-        enrollmentRepository.save(Enrollment.of(true,gathering,userResponse, LocalDateTime.now()));
+        enrollmentRepository.save(Enrollment.of(snowflake,true,gathering,userResponse, LocalDateTime.now()));
+        gatheringCountRepository.save(GatheringCount.of(snowflake,gathering,1));
         return AddGatheringResponse.of(SUCCESS_CODE,SUCCESS_MESSAGE);
 
     }

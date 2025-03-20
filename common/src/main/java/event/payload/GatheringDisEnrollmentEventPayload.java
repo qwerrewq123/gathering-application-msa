@@ -13,5 +13,9 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class GatheringDisEnrollmentEventPayload implements EventPayload {
-
+    private Long id;
+    private Boolean accepted;
+    private Long gatheringId;
+    private Long userId;
+    private LocalDateTime date;
 }

@@ -12,12 +12,14 @@ public enum EventType {
     GATHERING_CREATED(GatheringCreatedEventPayload.class, Topic.MSA_GATHERING),
     GATHERING_UPDATED(GatheringUpdateEventPayload.class, Topic.MSA_GATHERING),
     GATHERING_DELETED(GatheringDeleteEventPayload.class, Topic.MSA_GATHERING),
-    GATHERING_ENROLLMENT(GatheringEnrollmentEventPayload.class, Topic.MSA_GATHERING),
-    GATHERING_DIS_ENROLLMENT(GatheringDisEnrollmentEventPayload.class, Topic.MSA_GATHERING),
+    GATHERING_VIEW(GatheringViewEventPayload.class, Topic.MSA_GATHERING),
+    GATHERING_ENROLLMENT(GatheringEnrollmentEventPayload.class, Topic.MSA_GATHERING_ENROLLMENT),
+    GATHERING_DIS_ENROLLMENT(GatheringDisEnrollmentEventPayload.class, Topic.MSA_GATHERING_ENROLLMENT),
     MEETING_CREATED(MeetingCreatedEventPayload.class, Topic.MSA_MEETING),
     MEETING_UPDATED(MeetingUpdateEventPayload.class, Topic.MSA_MEETING),
-    MEETING_ATTEND(MeetingAttendEventPayload.class, Topic.MSA_MEETING),
-    MEETING_DIS_ATTEND(MeetingDisAttendEventPayload.class, Topic.MSA_MEETING),
+    MEETING_DELETED(MeetingDeleteEventPayload.class, Topic.MSA_MEETING),
+    MEETING_ATTEND(MeetingAttendEventPayload.class, Topic.MSA_MEETING_ATTEND),
+    MEETING_DIS_ATTEND(MeetingDisAttendEventPayload.class, Topic.MSA_MEETING_ATTEND),
     CHAT_ROOM_CREATED(ChatRoomCreatedEventPayload.class, Topic.MSA_CHAT),
     CHAT_MESSAGE_CREATED(ChatMessageCreatedEventPayload.class, Topic.MSA_CHAT),
     CHAT_ROOM_ATTEND(ChatRoomAttendEventPayload.class, Topic.MSA_CHAT),
@@ -37,7 +39,9 @@ public enum EventType {
 
     public static class Topic {
         public static final String MSA_GATHERING = "msa-gathering";
+        public static final String MSA_GATHERING_ENROLLMENT = "msa-gathering-enrollment";
         public static final String MSA_MEETING = "msa-meeting";
+        public static final String MSA_MEETING_ATTEND = "msa-meeting-attend";
         public static final String MSA_CHAT = "msa-chat";
     }
 }

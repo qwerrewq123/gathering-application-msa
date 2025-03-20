@@ -18,7 +18,9 @@ import gathering.msa.meeting.client.ImageServiceClient;
 import gathering.msa.meeting.client.UserServiceClient;
 import gathering.msa.meeting.entity.Attend;
 import gathering.msa.meeting.entity.Meeting;
+import gathering.msa.meeting.entity.MeetingCount;
 import gathering.msa.meeting.repository.AttendRepository;
+import gathering.msa.meeting.repository.MeetingCountRepository;
 import gathering.msa.meeting.repository.MeetingRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,6 +30,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import snowflake.Snowflake;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -46,9 +49,11 @@ public class MeetingService {
 
     private final MeetingRepository meetingRepository;
     private final AttendRepository attendRepository;
+    private final MeetingCountRepository meetingCountRepository;
     private final UserServiceClient userServiceClient;
     private final ImageServiceClient imageServiceClient;
     private final GatheringServiceClient gatheringServiceClient;
+    private final Snowflake snowflake = new Snowflake();
     @Value("${server.url}")
     private String url;
     public AddMeetingResponse addMeeting(AddMeetingRequest addMeetingRequest, String username, Long gatheringId, MultipartFile file) throws IOException {
@@ -59,35 +64,39 @@ public class MeetingService {
         if(!gatheringResponse.getCode().equals(SUCCESS_CODE)) throw new NotFoundUserException("no exist User!!");
         SaveImageResponse saveImageResponse = imageServiceClient.saveImage(List.of(file),null);
         if(!saveImageResponse.getCode().equals(SUCCESS_CODE)) throw new ImageUploadFailException("image upload fail");
-        Meeting meeting = Meeting.of(addMeetingRequest,saveImageResponse,userResponse,gatheringResponse);
-        Attend attend = Attend.of(false,meeting,userResponse,LocalDateTime.now());
+        Meeting meeting = Meeting.of(snowflake,addMeetingRequest,saveImageResponse,userResponse,gatheringResponse);
+        Attend attend = Attend.of(snowflake,false,meeting,userResponse,LocalDateTime.now());
+        MeetingCount meetingCount = MeetingCount.of(snowflake,gatheringId,meeting);
         meetingRepository.save(meeting);
         attendRepository.save(attend);
+        meetingCountRepository.save(meetingCount);
         return AddMeetingResponse.of(SUCCESS_CODE, SUCCESS_MESSAGE);
     }
 
-    public DeleteMeetingResponse deleteMeeting(String username, Long meetingId) {
+    public DeleteMeetingResponse deleteMeeting(String username, Long meetingId,Long gatheringId) {
 
         UserResponse userResponse = userServiceClient.fetchUserByUsername(username);
         if(!userResponse.getCode().equals(SUCCESS_CODE)) throw new NotFoundUserException("no exist User!!");
         Meeting meeting = meetingRepository.findById(meetingId).orElseThrow(()->new NotFoundMeetingExeption("no exist Meeting!!"));
+        MeetingCount meetingCount = meetingCountRepository.findByMeetingId(meetingId).orElseThrow();
         boolean authorize = meeting.getUserId() == userResponse.getId();
         if(authorize == false){
             throw new NotAuthorizeException("no authority!");
         }
-        if(meeting.getCount() > 1){
+        if(meetingCount.getCount() > 1){
             throw new MeetingIsNotEmptyException("meeting is not empty!!");
         }
         Attend attend = attendRepository.findByUserIdAndMeetingIdAndTrue(userResponse.getId(), meetingId);
         attendRepository.delete(attend);
         meetingRepository.delete(meeting);
+        meetingCountRepository.delete(meetingCount);
         return DeleteMeetingResponse.builder()
                 .code(SUCCESS_CODE)
                 .message(SUCCESS_MESSAGE)
                 .build();
     }
 
-    public UpdateMeetingResponse updateMeeting(UpdateMeetingRequest updateMeetingRequest, String username, Long meetingId, MultipartFile file) throws IOException {
+    public UpdateMeetingResponse updateMeeting(UpdateMeetingRequest updateMeetingRequest, String username, Long meetingId, MultipartFile file,Long gatheringId) throws IOException {
 
         UserResponse userResponse = userServiceClient.fetchUserByUsername(username);
         if(!userResponse.getCode().equals(SUCCESS_CODE)) throw new NotFoundUserException("no exist User!!");
@@ -109,7 +118,7 @@ public class MeetingService {
                 .message(SUCCESS_MESSAGE)
                 .build();
     }
-    public MeetingResponse meetingDetail(Long meetingId, String username) {
+    public MeetingResponse meetingDetail(Long meetingId, String username,Long gatheringId) {
 
         UserResponse userResponse = userServiceClient.fetchUserByUsername(username);
         if(!userResponse.getCode().equals(SUCCESS_CODE)) throw new NotFoundUserException("no exist User!!");
@@ -119,7 +128,7 @@ public class MeetingService {
 
     }
 
-    public MeetingsResponse meetings(int pageNum, int pageSize, String username, String title) {
+    public MeetingsResponse meetings(int pageNum, int pageSize, String username, String title,Long gatheringId) {
 
         UserResponse userResponse = userServiceClient.fetchUserByUsername(username);
         if(!userResponse.getCode().equals(SUCCESS_CODE)) throw new NotFoundUserException("no exist User!!");
@@ -155,8 +164,8 @@ public class MeetingService {
                         .endDate(meetingsQueries.get(i).getEndDate())
                         .content(meetingsQueries.get(i).getContent())
                         .count(meetingsQueries.get(i).getCount())
-                        .url(getUrl(urls.get(i)))  // 괄호 수정됨
-                        .build())  // build() 위치 정상화
+                        .url(getUrl(urls.get(i)))
+                        .build())
                 .collect(Collectors.toList());
         return MeetingsResponse.builder()
                 .hasNext(hasNext)

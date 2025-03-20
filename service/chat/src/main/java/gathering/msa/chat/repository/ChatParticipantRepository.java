@@ -9,8 +9,9 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ChatParticipantRepository extends JpaRepository<ChatParticipant, Long> {
-    @Query("select p from ChatParticipant p left join p.chatRoom c where p.status =:status and p.userId=:userId and c.id=:chatRoomId")
-    Optional<ChatParticipant> findByChatRoomAndUserAndStatus(Long chatRoomId, Long userId, boolean status);
+
+    @Query("select cp from ChatParticipant cp where cp.chatRoom =:chatRoom and cp.userId = :userId and cp.status = :status")
+    Optional<ChatParticipant> findByChatRoomAndUserAndStatus(ChatRoom chatRoom, Long userId, boolean status);
 
     List<ChatParticipant> findAllByChatRoomAndStatus(ChatRoom chatRoom, boolean status);
 

@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import snowflake.Snowflake;
 
 import java.time.LocalDateTime;
 
@@ -18,7 +19,8 @@ public class Attend {
 
     @Id
     private Long id;
-    private Long shardKey;
+    @Column(name = "gathring_id")
+    private Long gatheringId;
     private Boolean accepted;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "meeting_id")
@@ -26,8 +28,9 @@ public class Attend {
     @Column(name = "user_id")
     private Long userId;
     private LocalDateTime date;
-    public static Attend of(boolean accepted, Meeting meeting, UserResponse userResponse, LocalDateTime date) {
+    public static Attend of(Snowflake snowflake,boolean accepted, Meeting meeting, UserResponse userResponse, LocalDateTime date) {
         return Attend.builder()
+                .id(snowflake.nextId())
                 .accepted(accepted)
                 .meeting(meeting)
                 .userId(userResponse.getId())

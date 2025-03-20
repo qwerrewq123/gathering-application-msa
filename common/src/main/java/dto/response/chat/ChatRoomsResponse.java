@@ -5,7 +5,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -15,11 +14,12 @@ import java.util.List;
 public class ChatRoomsResponse {
     private String code;
     private String message;
-    private List<ChatRoomResponse> elements = new ArrayList<>();
+    private List<ChatRoomsResponseElement> content;
     private boolean hasNext;
-//    private Page<ChatRoomResponse> page;
 
-//    public static ChatRoomsResponse of(String code, String message, Page<ChatRoomResponse> page) {
-//        return new ChatRoomsResponse(code, message, page);
-//    }
+    public static ChatRoomsResponse of(String code, String message, List<ChatRoomsResponseElement> content,boolean hasNext) {
+        return new ChatRoomsResponse(code,message,content,hasNext);
+    }
+
+
 }

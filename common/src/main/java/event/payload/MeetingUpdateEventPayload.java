@@ -13,5 +13,13 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class MeetingUpdateEventPayload implements EventPayload {
-
+    private Long id;
+    private String title;
+    private LocalDateTime boardDate;
+    private LocalDateTime startDate;
+    private LocalDateTime endDate;
+    private String content;
+    private Long userId;
+    private Long gatheringId;
+    private Long imageId;
 }

@@ -10,6 +10,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import snowflake.Snowflake;
 
 import java.time.LocalDateTime;
 
@@ -31,23 +32,19 @@ public class Gathering {
     private Category category;
     @Column(name = "user_id")
     private Long userId;
-    private int count;
     @Column(name = "image_id")
     private Long imageId;
 
-    public void changeCount(int count){
-        this.count = count;
-    }
 
-    public static Gathering of(AddGatheringRequest addGatheringRequest, UserResponse userResponse, Category category, SaveImageResponse saveImageResponse){
+    public static Gathering of(Snowflake snowflake,AddGatheringRequest addGatheringRequest, UserResponse userResponse, Category category, SaveImageResponse saveImageResponse){
         return Gathering.builder()
+                .id(snowflake.nextId())
                 .title(addGatheringRequest.getTitle())
                 .content(addGatheringRequest.getContent())
                 .userId(userResponse.getId())
                 .category(category)
                 .registerDate(LocalDateTime.now())
                 .imageId(saveImageResponse.getIds().getFirst())
-                .count(1)
                 .build();
     }
     public void changeGathering(UpdateGatheringRequest updateGatheringRequest, SaveImageResponse saveImageResponse, Category category){

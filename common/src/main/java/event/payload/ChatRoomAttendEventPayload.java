@@ -11,5 +11,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ChatRoomAttendEventPayload implements EventPayload {
-
+    private Long roomId;
+    private Long gatheringId;
+    private Long userId;
 }

@@ -13,7 +13,7 @@ public class ChatMyRoomsResponseElement {
     private Long id;
     private String name;
     private int count;
-    private String createdBy;
+    private String username;
     private boolean status;
     private long unReadCount;
 }

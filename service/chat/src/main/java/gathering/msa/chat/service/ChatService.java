@@ -2,8 +2,9 @@ package gathering.msa.chat.service;
 
 import dto.request.chat.ChatMessageRequest;
 import dto.response.chat.*;
-import dto.response.gathering.TotalGatheringsElement;
 import dto.response.user.UserResponse;
+import dto.response.user.UserResponses;
+import dto.response.user.UserResponsesElement;
 import exception.chat.NotFoundChatMessageException;
 import exception.chat.NotFoundChatParticipantException;
 import exception.chat.NotFoundChatRoomException;
@@ -25,7 +26,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static util.ConstClass.*;
@@ -46,20 +46,24 @@ public class ChatService {
     public AddChatRoomResponse addChatRoom(String roomName, String username) {
         UserResponse userResponse = userServiceClient.fetchUserByUsername(username);
         if(!userResponse.getCode().equals(SUCCESS_CODE)) throw new NotFoundUserException("no exist User!!");
-        ChatRoom chatRoom = ChatRoom.of(roomName, userResponse);
-        ChatParticipant chatParticipant = ChatParticipant.of(chatRoom, userResponse);
+        Long userId = userResponse.getId();
+        ChatRoom chatRoom = ChatRoom.of(roomName, userId);
+        ChatParticipant chatParticipant = ChatParticipant.of(chatRoom, userId);
         chatRoomRepository.save(chatRoom);
         chatParticipantRepository.save(chatParticipant);
         return AddChatRoomResponse.of(SUCCESS_CODE,SUCCESS_MESSAGE);
     }
 
-    public ChatRoomResponses fetchChatRooms(Integer pageNum, String username) {
+    public ChatRoomsResponse fetchChatRooms(Integer pageNum, String username) {
         UserResponse userResponse = userServiceClient.fetchUserByUsername(username);
         if(!userResponse.getCode().equals(SUCCESS_CODE)) throw new NotFoundUserException("no exist User!!");
         Long userId = userResponse.getId();
         PageRequest pageRequest = PageRequest.of(pageNum, 5);
         Page<ChatRoomResponse> page = chatRoomRepository.fetchChatRooms(pageRequest,userId);
-        return toChatRoomResponses(page);
+        boolean hasNext = page.hasNext();
+        List<ChatRoomResponse> content = page.getContent();
+        List<ChatRoomsResponseElement> element = toChatRoomsResponseElements(content);
+        return ChatRoomsResponse.of(SUCCESS_CODE,SUCCESS_MESSAGE,element,hasNext);
     }
 
     public ChatMyRoomsResponse fetchMyChatRooms(Integer pageNum, String username) {
@@ -68,16 +72,19 @@ public class ChatService {
         Long userId = userResponse.getId();
         PageRequest pageRequest = PageRequest.of(pageNum, 5);
         Page<ChatMyRoomResponse> page = chatRoomRepository.fetchMyChatRooms(pageRequest,userId);
-        return toChatMyRoomsResponse(page);
+        boolean hasNext = page.hasNext();
+        List<ChatMyRoomResponse> content = page.getContent();
+        List<ChatMyRoomsResponseElement> element = toChatMyRoomsResponseElements(content);
+        return ChatMyRoomsResponse.of(SUCCESS_CODE,SUCCESS_MESSAGE,element,hasNext);
     }
-
 
     public LeaveChatResponse leaveChat(Long chatId, String username) {
         UserResponse userResponse = userServiceClient.fetchUserByUsername(username);
         if(!userResponse.getCode().equals(SUCCESS_CODE)) throw new NotFoundUserException("no exist User!!");
+        Long userId = userResponse.getId();
         ChatRoom chatRoom = chatRoomRepository.findById(chatId)
                 .orElseThrow(() -> new NotFoundChatRoomException("no exist ChatRoom!!"));
-        ChatParticipant chatParticipant = chatParticipantRepository.findByChatRoomAndUserAndStatus(chatRoom.getId(),userResponse.getId(),true)
+        ChatParticipant chatParticipant = chatParticipantRepository.findByChatRoomAndUserAndStatus(chatRoom,userId,true)
                 .orElseThrow(()-> new NotFoundChatParticipantException("no exist ChatParticipant!!"));
         chatParticipant.changeStatus(false);
         return LeaveChatResponse.of(SUCCESS_CODE,SUCCESS_MESSAGE);
@@ -86,9 +93,10 @@ public class ChatService {
     public ReadChatMessageResponse readChatMessage(Long chatId, String username) {
         UserResponse userResponse = userServiceClient.fetchUserByUsername(username);
         if(!userResponse.getCode().equals(SUCCESS_CODE)) throw new NotFoundUserException("no exist User!!");
+        Long userId = userResponse.getId();
         ChatRoom chatRoom = chatRoomRepository.findById(chatId)
                 .orElseThrow(() -> new NotFoundChatRoomException("no exist ChatRoom!!"));
-        ChatParticipant chatParticipant = chatParticipantRepository.findByChatRoomAndUserAndStatus(chatRoom.getId(),userResponse.getId(),true)
+        ChatParticipant chatParticipant = chatParticipantRepository.findByChatRoomAndUserAndStatus(chatRoom,userId,true)
                 .orElseThrow(()-> new NotFoundChatParticipantException("no exist ChatParticipant!!"));
         List<ChatMessage> chatMessages = chatMessageRepository.findByChatRoomAndChatParticipant(chatRoom,chatParticipant);
         if(chatMessages.isEmpty()) throw new NotFoundChatMessageException("no exist ChatMessage!!!");
@@ -105,7 +113,8 @@ public class ChatService {
                 .orElseThrow(() -> new NotFoundChatRoomException("no exist ChatRoom!!"));
         UserResponse userResponse = userServiceClient.fetchUserByUsername(chatMessageRequest.getUsername());
         if(!userResponse.getCode().equals(SUCCESS_CODE)) throw new NotFoundUserException("no exist User!!");
-        ChatParticipant chatParticipant = chatParticipantRepository.findByChatRoomAndUserAndStatus(chatRoom.getId(), userResponse.getId(), true)
+        Long userId = userResponse.getId();
+        ChatParticipant chatParticipant = chatParticipantRepository.findByChatRoomAndUserAndStatus(chatRoom,userId,true)
                 .orElseThrow(()->new NotFoundChatParticipantException("no exist ChatParticipant!!"));
         ChatMessage chatMessage = ChatMessage.of(chatRoom,chatParticipant,chatMessageRequest);
         List<ChatParticipant> trueChatParticipants =
@@ -121,12 +130,14 @@ public class ChatService {
                 .orElseThrow(() -> new NotFoundChatRoomException("no exist ChatRoom!!"));
         UserResponse userResponse = userServiceClient.fetchUserByUsername(username);
         if(!userResponse.getCode().equals(SUCCESS_CODE)) throw new NotFoundUserException("no exist User!!");
-        Optional<ChatParticipant> optionalChatParticipant = chatParticipantRepository.findByChatRoomAndUserAndStatus(chatRoom.getId(), userResponse.getId(), false);
+        Long userId = userResponse.getId();
+        Optional<ChatParticipant> optionalChatParticipant = chatParticipantRepository.findByChatRoomAndUserAndStatus(chatRoom,userId,false);
+
         if(optionalChatParticipant.isPresent()) optionalChatParticipant.get().changeStatus(true);
         if(optionalChatParticipant.isEmpty()){
             chatParticipantRepository.save(ChatParticipant.builder()
                     .chatRoom(chatRoom)
-                    .userId(userResponse.getId())
+                    .userId(userId)
                     .status(true)
                     .build());
         }
@@ -139,7 +150,8 @@ public class ChatService {
                 .orElseThrow(() -> new NotFoundChatRoomException("no exist ChatRoom!!"));
         UserResponse userResponse = userServiceClient.fetchUserByUsername(username);
         if(!userResponse.getCode().equals(SUCCESS_CODE)) throw new NotFoundUserException("no exist User!!");
-        ChatParticipant chatParticipant = chatParticipantRepository.findByChatRoomAndUserAndStatus(chatRoom.getId(), userResponse.getId(), true)
+        Long userId = userResponse.getId();
+        ChatParticipant chatParticipant = chatParticipantRepository.findByChatRoomAndUserAndStatus(chatRoom,userId,true)
                 .orElseThrow(()->new NotFoundChatParticipantException("no exist ChatParticipant!!"));
         Long chatParticipantId = chatParticipant.getId();
         List<ChatMessageResponse> chatMessageResponses = chatMessageRepository.fetchMessages(roomId,chatParticipantId);
@@ -151,7 +163,8 @@ public class ChatService {
                 .orElseThrow(() -> new NotFoundChatRoomException("no exist ChatRoom!!"));
         UserResponse userResponse = userServiceClient.fetchUserByUsername(username);
         if(!userResponse.getCode().equals(SUCCESS_CODE)) throw new NotFoundUserException("no exist User!!");
-        chatParticipantRepository.findByChatRoomAndUserAndStatus(chatRoom.getId(), userResponse.getId(), true)
+        Long userId = userResponse.getId();
+        chatParticipantRepository.findByChatRoomAndUserAndStatus(chatRoom,userId,true)
                 .orElseThrow(()->new NotFoundChatParticipantException("no exist ChatParticipant!!"));
         return true;
     }
@@ -173,56 +186,39 @@ public class ChatService {
         }
     }
 
-    private ChatRoomResponses toChatRoomResponses(Page<ChatRoomResponse> page) {
-        boolean hasNext = page.hasNext();
-        List<ChatRoomResponse> list  = page.getContent();
-        List<Long> createdByIds = page.getContent().stream()
-                .map(c -> c.getCreatedById())
+    private List<ChatMyRoomsResponseElement> toChatMyRoomsResponseElements(List<ChatMyRoomResponse> content) {
+        List<Long> userIds = content.stream()
+                .map(ChatMyRoomResponse::getUserId)
                 .toList();
-        List<String> usernames = userServiceClient.fetchUserByIds(createdByIds).getElements().stream()
-                .map(u -> u.getUsername())
-                .toList();
-        List<ChatRoomResponsesElement> result = IntStream.range(0, list.size())
-                .mapToObj(i -> ChatRoomResponsesElement.builder()
-                        .id(list.get(i).getId())
-                        .name(list.get(i).getName())
-                        .count(list.get(i).getCount())
-                        .status(list.get(i).isStatus())
-                        .createdBy(usernames.get(i))
-                        .build())
-                .collect(Collectors.toList());
-        return ChatRoomResponses.builder()
-                .hasNext(hasNext)
-                .code(SUCCESS_CODE)
-                .message(SUCCESS_MESSAGE)
-                .elements(result)
-                .build();
+        UserResponses userResponses = userServiceClient.fetchUserByIds(userIds);
+        List<UserResponsesElement> elements = userResponses.getElements();
+        return IntStream.range(0,content.size())
+                .mapToObj(i -> ChatMyRoomsResponseElement.builder()
+                        .id(content.get(i).getId())
+                        .name(content.get(i).getName())
+                        .count(content.get(i).getCount())
+                        .status(content.get(i).isStatus())
+                        .username(elements.get(i).getUsername())
+                        .unReadCount(content.get(i).getUnReadCount())
+                        .build()
+                ).toList();
     }
 
-    private ChatMyRoomsResponse toChatMyRoomsResponse(Page<ChatMyRoomResponse> page) {
-        boolean hasNext = page.hasNext();
-        List<ChatMyRoomResponse> list  = page.getContent();
-        List<Long> createdByIds = page.getContent().stream()
-                .map(c -> c.getCreatedById())
+    private List<ChatRoomsResponseElement> toChatRoomsResponseElements(List<ChatRoomResponse> content) {
+        List<Long> userIds = content.stream()
+                .map(ChatRoomResponse::getUserId)
                 .toList();
-        List<String> usernames = userServiceClient.fetchUserByIds(createdByIds).getElements().stream()
-                .map(u -> u.getUsername())
-                .toList();
-        List<ChatMyRoomsResponseElement> result = IntStream.range(0, list.size())
-                .mapToObj(i -> ChatMyRoomsResponseElement.builder()
-                        .id(list.get(i).getId())
-                        .name(list.get(i).getName())
-                        .count(list.get(i).getCount())
-                        .status(list.get(i).isStatus())
-                        .unReadCount(list.get(i).getUnReadCount())
-                        .createdBy(usernames.get(i))
-                        .build())
-                .collect(Collectors.toList());
-        return ChatMyRoomsResponse.builder()
-                .hasNext(hasNext)
-                .code(SUCCESS_CODE)
-                .message(SUCCESS_MESSAGE)
-                .element(result)
-                .build();
+        UserResponses userResponses = userServiceClient.fetchUserByIds(userIds);
+        List<UserResponsesElement> elements = userResponses.getElements();
+        return IntStream.range(0,content.size())
+                .mapToObj(i -> ChatRoomsResponseElement.builder()
+                        .id(content.get(i).getId())
+                        .name(content.get(i).getName())
+                        .count(content.get(i).getCount())
+                        .status(content.get(i).isStatus())
+                        .username(elements.get(i).getUsername())
+                        .build()
+                ).toList();
+
     }
 }

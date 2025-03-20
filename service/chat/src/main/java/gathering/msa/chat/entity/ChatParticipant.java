@@ -1,11 +1,11 @@
 package gathering.msa.chat.entity;
 
-import dto.response.user.UserResponse;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import spring.myproject.entity.user.User;
 
 @Entity
 @NoArgsConstructor
@@ -17,7 +17,6 @@ public class ChatParticipant {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private Long shardKey;
     @Column(name = "user_id")
     private Long userId;
     @ManyToOne(fetch = FetchType.LAZY)
@@ -29,10 +28,10 @@ public class ChatParticipant {
         this.status = status;
     }
 
-    public static ChatParticipant of(ChatRoom chatRoom, UserResponse userResponse){
+    public static ChatParticipant of(ChatRoom chatRoom,Long userId){
         return ChatParticipant.builder()
                 .chatRoom(chatRoom)
-                .userId(userResponse.getId())
+                .userId(userId)
                 .status(false)
                 .build();
     }

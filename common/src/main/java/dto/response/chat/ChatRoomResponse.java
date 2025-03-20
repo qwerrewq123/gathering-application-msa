@@ -13,6 +13,6 @@ public class ChatRoomResponse {
     private Long id;
     private String name;
     private int count;
-    private Long createdById;
+    private Long userId;
     private boolean status;
 }
