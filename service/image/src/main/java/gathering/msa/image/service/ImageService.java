@@ -15,6 +15,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
+import snowflake.Snowflake;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -30,6 +31,7 @@ public class ImageService {
     private final S3ImageDownloadService s3ImageDownloadService;
     private final S3ImageUploadService s3ImageUploadService;
     private final ImageRepository imageRepository;
+    private final Snowflake snowflake = new Snowflake();
     @Value("${server.endpoint}")
     private String endpoint;
 
@@ -45,6 +47,7 @@ public class ImageService {
             if(!file.isEmpty()){
                 String url = s3ImageUploadService.upload(file);
                 Image image = Image.builder()
+                        .id(snowflake.nextId())
                         .url(url)
                         .boardId(boardId)
                         .build();
