@@ -6,6 +6,7 @@ import event.EventType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
+import snowflake.Snowflake;
 
 @Component
 @RequiredArgsConstructor
