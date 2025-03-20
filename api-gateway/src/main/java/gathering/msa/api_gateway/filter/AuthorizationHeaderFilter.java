@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dto.response.Response;
 import gathering.msa.api_gateway.entity.User;
+import gathering.msa.api_gateway.repository.JwtRepository;
 import gathering.msa.api_gateway.repository.UserRepository;
 import gathering.msa.api_gateway.validator.JwtValidator;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +34,7 @@ public class AuthorizationHeaderFilter extends AbstractGatewayFilterFactory<Auth
     JwtValidator jwtValidator;
     ObjectMapper objectMapper;
     UserRepository userRepository;
+    JwtRepository jwtRepository;
 
     public AuthorizationHeaderFilter(@Value("${jwt.secretKey}") String secretKey, JwtValidator jwtValidator,UserRepository userRepository) {
         super(Config.class);
@@ -40,6 +42,7 @@ public class AuthorizationHeaderFilter extends AbstractGatewayFilterFactory<Auth
         this.jwtValidator = jwtValidator;
         this.objectMapper = new ObjectMapper();
         this.userRepository = userRepository;
+        this.jwtRepository = jwtRepository;
     }
 
     public static class Config {
@@ -56,11 +59,16 @@ public class AuthorizationHeaderFilter extends AbstractGatewayFilterFactory<Auth
 
             String authorizationHeader = request.getHeaders().get(HttpHeaders.AUTHORIZATION).get(0);
             String jwt = authorizationHeader.replace("Bearer ", "");
-
+            String findJwt = jwtRepository.read(jwt);
+            if(findJwt!=null){
+                //TODO : 로직처리
+                return chain.filter(exchange);
+            }
             if (!isJwtValid(jwt)) {
                 return onError(exchange, HttpStatus.UNAUTHORIZED);
             }
-
+            //TODO : clientId 확인
+            jwtRepository.createOrUpdate(1L,jwt);
             return chain.filter(exchange);
         };
     }
