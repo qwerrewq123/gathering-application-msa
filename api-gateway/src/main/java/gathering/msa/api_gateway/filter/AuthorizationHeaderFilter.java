@@ -30,15 +30,14 @@ import static util.ConstClass.*;
 @Slf4j
 public class AuthorizationHeaderFilter extends AbstractGatewayFilterFactory<AuthorizationHeaderFilter.Config> {
 
-    String secretKey;
-    JwtValidator jwtValidator;
-    ObjectMapper objectMapper;
-    UserRepository userRepository;
-    JwtRepository jwtRepository;
+    private final JwtValidator jwtValidator;
+    private final ObjectMapper objectMapper;
+    private final UserRepository userRepository;
+    private final JwtRepository jwtRepository;
 
-    public AuthorizationHeaderFilter(@Value("${jwt.secretKey}") String secretKey, JwtValidator jwtValidator,UserRepository userRepository) {
+    public AuthorizationHeaderFilter(@Value("${jwt.secretKey}") String secretKey,
+                                     JwtValidator jwtValidator,UserRepository userRepository,JwtRepository jwtRepository) {
         super(Config.class);
-        this.secretKey = secretKey;
         this.jwtValidator = jwtValidator;
         this.objectMapper = new ObjectMapper();
         this.userRepository = userRepository;

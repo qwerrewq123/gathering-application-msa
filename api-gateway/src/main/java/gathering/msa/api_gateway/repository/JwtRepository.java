@@ -14,8 +14,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static util.ConstClass.SUCCESS_CODE;
-import static util.ConstClass.SUCCESS_MESSAGE;
 
 @Repository
 @RequiredArgsConstructor
