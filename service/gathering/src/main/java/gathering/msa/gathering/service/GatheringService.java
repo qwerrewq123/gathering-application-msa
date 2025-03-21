@@ -49,7 +49,7 @@ import static util.ConstClass.*;
 @Transactional
 @RequiredArgsConstructor
 public class GatheringService {
-
+    private final GatheringViewService gatheringViewService;
     private final GatheringRepository gatheringRepository;
     private final CategoryRepository categoryRepository;
     private final EnrollmentRepository enrollmentRepository;
@@ -102,11 +102,12 @@ public class GatheringService {
 
 
     public GatheringResponse gatheringDetail(Long gatheringId, String username) throws IOException {
-
+        //TODO : response 모두 고치기
         UserResponse userResponse = userServiceClient.fetchUserByUsername(username);
         if(!userResponse.getCode().equals(SUCCESS_CODE)) throw new NotFoundUserException("no exist User!!");
         List<GatheringDetailQuery> gatheringDetailQueries = gatheringRepository.gatheringDetail(gatheringId);
         if(gatheringDetailQueries.isEmpty()) throw new NotFoundGatheringException("no exist Gathering!!!");
+        gatheringViewService.fetchCount(gatheringId);
         return getGatheringResponse(gatheringDetailQueries);
     }
     public GatheringPagingResponse gatheringCategory(String category, Integer pageNum, Integer pageSize, String username) {
