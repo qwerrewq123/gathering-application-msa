@@ -10,6 +10,7 @@ dependencies {
     implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
     implementation 'org.springframework.kafka:spring-kafka'
     implementation project(':common')
+    implementation project(':outbox-message-relay')
     runtimeOnly 'com.mysql:mysql-connector-j'
 }
 

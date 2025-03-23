@@ -8,6 +8,10 @@ import dto.response.gathering.GatheringsResponse;
 import dto.response.image.SaveImageResponse;
 import dto.response.meeting.*;
 import dto.response.user.UserResponse;
+import event.EventType;
+import event.payload.MeetingCreatedEventPayload;
+import event.payload.MeetingDeleteEventPayload;
+import event.payload.MeetingUpdateEventPayload;
 import exception.image.ImageUploadFailException;
 import exception.meeting.MeetingIsNotEmptyException;
 import exception.meeting.NotAuthorizeException;
@@ -22,6 +26,7 @@ import gathering.msa.meeting.entity.MeetingCount;
 import gathering.msa.meeting.repository.AttendRepository;
 import gathering.msa.meeting.repository.MeetingCountRepository;
 import gathering.msa.meeting.repository.MeetingRepository;
+import gathering.msa.outbox.OutboxEventPublisher;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -54,6 +59,7 @@ public class MeetingService {
     private final ImageServiceClient imageServiceClient;
     private final GatheringServiceClient gatheringServiceClient;
     private final Snowflake snowflake = new Snowflake();
+    private final OutboxEventPublisher outboxEventPublisher;
     @Value("${server.url}")
     private String url;
     public AddMeetingResponse addMeeting(AddMeetingRequest addMeetingRequest, String username, Long gatheringId, MultipartFile file) throws IOException {
@@ -70,6 +76,20 @@ public class MeetingService {
         meetingRepository.save(meeting);
         attendRepository.save(attend);
         meetingCountRepository.save(meetingCount);
+        outboxEventPublisher.publish(EventType.MEETING_CREATED,
+                MeetingCreatedEventPayload.builder()
+                        .id(meeting.getId())
+                        .title(meeting.getTitle())
+                        .boardDate(meeting.getBoardDate())
+                        .startDate(meeting.getStartDate())
+                        .endDate(meeting.getEndDate())
+                        .content(meeting.getContent())
+                        .userId(meeting.getUserId())
+                        .gatheringId(meeting.getGatheringId())
+                        .imageId(meeting.getImageId())
+                        .build(),
+                gatheringId
+                );
         return AddMeetingResponse.of(SUCCESS_CODE, SUCCESS_MESSAGE);
     }
 
@@ -90,6 +110,20 @@ public class MeetingService {
         attendRepository.delete(attend);
         meetingRepository.delete(meeting);
         meetingCountRepository.delete(meetingCount);
+        outboxEventPublisher.publish(EventType.MEETING_DELETED,
+                MeetingDeleteEventPayload.builder()
+                        .id(meeting.getId())
+                        .title(meeting.getTitle())
+                        .boardDate(meeting.getBoardDate())
+                        .startDate(meeting.getStartDate())
+                        .endDate(meeting.getEndDate())
+                        .content(meeting.getContent())
+                        .userId(meeting.getUserId())
+                        .gatheringId(meeting.getGatheringId())
+                        .imageId(meeting.getImageId())
+                        .build(),
+                gatheringId
+        );
         return DeleteMeetingResponse.builder()
                 .code(SUCCESS_CODE)
                 .message(SUCCESS_MESSAGE)
@@ -113,6 +147,20 @@ public class MeetingService {
         meeting.setEndDate(updateMeetingRequest.getEndDate());
         meeting.setBoardDate(LocalDateTime.now());
         meeting.setImageId(saveImageResponse.getIds().getFirst());
+        outboxEventPublisher.publish(EventType.MEETING_UPDATED,
+                MeetingUpdateEventPayload.builder()
+                        .id(meeting.getId())
+                        .title(meeting.getTitle())
+                        .boardDate(meeting.getBoardDate())
+                        .startDate(meeting.getStartDate())
+                        .endDate(meeting.getEndDate())
+                        .content(meeting.getContent())
+                        .userId(meeting.getUserId())
+                        .gatheringId(meeting.getGatheringId())
+                        .imageId(meeting.getImageId())
+                        .build(),
+                gatheringId
+        );
         return UpdateMeetingResponse.builder()
                 .code(SUCCESS_CODE)
                 .message(SUCCESS_MESSAGE)

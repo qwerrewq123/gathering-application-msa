@@ -22,14 +22,16 @@ public class ChatRoom {
     @Column(name = "user_id")
     private Long userId;
     private int count;
+    private Long gatheringId;
     public void changeCount(int count){
         this.count = count;
     }
-    public static ChatRoom of(String name,Long userId){
+    public static ChatRoom of(String name,Long userId,Long gatheringId){
         return ChatRoom.builder()
                 .name(name)
                 .userId(userId)
                 .count(1)
+                .gatheringId(gatheringId)
                 .build();
     }
 

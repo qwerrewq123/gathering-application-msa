@@ -5,6 +5,9 @@ import dto.response.chat.*;
 import dto.response.user.UserResponse;
 import dto.response.user.UserResponses;
 import dto.response.user.UserResponsesElement;
+import event.EventType;
+import event.payload.ChatRoomAttendEventPayload;
+import event.payload.ChatRoomCreatedEventPayload;
 import exception.chat.NotFoundChatMessageException;
 import exception.chat.NotFoundChatParticipantException;
 import exception.chat.NotFoundChatRoomException;
@@ -18,6 +21,7 @@ import gathering.msa.chat.repository.ChatMessageRepository;
 import gathering.msa.chat.repository.ChatParticipantRepository;
 import gathering.msa.chat.repository.ChatRoomRepository;
 import gathering.msa.chat.repository.ReadStatusRepository;
+import gathering.msa.outbox.OutboxEventPublisher;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -41,16 +45,25 @@ public class ChatService {
     private final ChatMessageRepository chatMessageRepository;
     private final ReadStatusRepository readStatusRepository;
     private final UserServiceClient userServiceClient;
+    private final OutboxEventPublisher outboxEventPublisher;
 
 
-    public AddChatRoomResponse addChatRoom(String roomName, String username) {
+    public AddChatRoomResponse addChatRoom(String roomName, String username,Long gatheringId) {
         UserResponse userResponse = userServiceClient.fetchUserByUsername(username);
         if(!userResponse.getCode().equals(SUCCESS_CODE)) throw new NotFoundUserException("no exist User!!");
         Long userId = userResponse.getId();
-        ChatRoom chatRoom = ChatRoom.of(roomName, userId);
+        ChatRoom chatRoom = ChatRoom.of(roomName, userId,gatheringId);
         ChatParticipant chatParticipant = ChatParticipant.of(chatRoom, userId);
         chatRoomRepository.save(chatRoom);
         chatParticipantRepository.save(chatParticipant);
+        outboxEventPublisher.publish(EventType.CHAT_ROOM_CREATED,
+                ChatRoomCreatedEventPayload.builder()
+                        .roomId(chatRoom.getId())
+                        .userId(chatRoom.getUserId())
+                        .gatheringId(chatRoom.getGatheringId())
+                        .build(),
+                gatheringId
+                );
         return AddChatRoomResponse.of(SUCCESS_CODE,SUCCESS_MESSAGE);
     }
 
@@ -125,7 +138,7 @@ public class ChatService {
         saveReadStatus(trueChatParticipants, chatMessage, falseChatParticipants);
     }
 
-    public AttendChatResponse attendChat(Long roomId, String username) {
+    public AttendChatResponse attendChat(Long roomId, String username,Long gatheringId) {
         ChatRoom chatRoom = chatRoomRepository.findById(roomId)
                 .orElseThrow(() -> new NotFoundChatRoomException("no exist ChatRoom!!"));
         UserResponse userResponse = userServiceClient.fetchUserByUsername(username);
@@ -142,6 +155,14 @@ public class ChatService {
                     .build());
         }
         chatRoom.changeCount(chatRoom.getCount()+1);
+        outboxEventPublisher.publish(EventType.CHAT_ROOM_ATTEND,
+                ChatRoomAttendEventPayload.builder()
+                        .roomId(chatRoom.getId())
+                        .userId(chatRoom.getUserId())
+                        .gatheringId(chatRoom.getGatheringId())
+                        .build(),
+                gatheringId
+        );
         return AttendChatResponse.of(SUCCESS_CODE,SUCCESS_MESSAGE);
     }
 

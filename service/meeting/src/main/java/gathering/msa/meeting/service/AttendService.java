@@ -4,6 +4,9 @@ import dto.response.attend.AddAttendResponse;
 import dto.response.attend.DisAttendResponse;
 import dto.response.attend.PermitAttendResponse;
 import dto.response.user.UserResponse;
+import event.EventType;
+import event.payload.MeetingAttendEventPayload;
+import event.payload.MeetingDisAttendEventPayload;
 import exception.attend.AlreadyAttendExeption;
 import exception.attend.NotFoundAttend;
 import exception.attend.NotWithdrawException;
@@ -17,6 +20,7 @@ import gathering.msa.meeting.entity.MeetingCount;
 import gathering.msa.meeting.repository.AttendRepository;
 import gathering.msa.meeting.repository.MeetingCountRepository;
 import gathering.msa.meeting.repository.MeetingRepository;
+import gathering.msa.outbox.OutboxEventPublisher;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,6 +41,7 @@ public class AttendService {
         private final UserServiceClient userServiceClient;
         private final MeetingCountRepository meetingCountRepository;
         private final Snowflake snowflake = new Snowflake();
+        private final OutboxEventPublisher outboxEventPublisher;
         public AddAttendResponse addAttend(Long meetingId, String username,Long gatheringId) {
 
             UserResponse userResponse = userServiceClient.fetchUserByUsername(username);
@@ -46,6 +51,17 @@ public class AttendService {
             if(checkAttend != null) throw new AlreadyAttendExeption("Meeting already attend");
             Attend attend = Attend.of(snowflake,false,meeting,userResponse,LocalDateTime.now());
             attendRepository.save(attend);
+            outboxEventPublisher.publish(EventType.MEETING_ATTEND,
+                    MeetingAttendEventPayload.builder()
+                            .id(attend.getId())
+                            .gatheringId(attend.getGatheringId())
+                            .accepted(attend.getAccepted())
+                            .meetingId(meetingId)
+                            .userId(attend.getUserId())
+                            .date(attend.getDate())
+                            .build(),
+                    gatheringId
+            );
             return AddAttendResponse.of(SUCCESS_CODE,SUCCESS_MESSAGE);
         }
 
@@ -59,6 +75,17 @@ public class AttendService {
             Long createdById = meeting.getUserId();
             Long userId = userResponse.getId();
             checkMeetingOpener(createdById, userId, meeting, attend,meetingCount);
+            outboxEventPublisher.publish(EventType.MEETING_DIS_ATTEND,
+                    MeetingDisAttendEventPayload.builder()
+                            .id(attend.getId())
+                            .gatheringId(attend.getGatheringId())
+                            .accepted(attend.getAccepted())
+                            .meetingId(meetingId)
+                            .userId(attend.getUserId())
+                            .date(attend.getDate())
+                            .build(),
+                    gatheringId
+            );
             return DisAttendResponse.of(SUCCESS_CODE,SUCCESS_MESSAGE);
         }
 

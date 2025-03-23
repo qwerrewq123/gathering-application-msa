@@ -8,6 +8,11 @@ import dto.response.image.SaveImageResponse;
 import dto.response.user.UserResponse;
 import dto.response.user.UserResponses;
 import dto.response.user.UserResponsesElement;
+import event.Event;
+import event.EventType;
+import event.payload.GatheringCreatedEventPayload;
+import event.payload.GatheringUpdateEventPayload;
+import event.payload.GatheringViewEventPayload;
 import exception.category.NotFoundCategoryException;
 import exception.gathering.NotFoundGatheringException;
 import exception.image.ImageUploadFailException;
@@ -23,6 +28,7 @@ import gathering.msa.gathering.repository.CategoryRepository;
 import gathering.msa.gathering.repository.EnrollmentRepository;
 import gathering.msa.gathering.repository.GatheringCountRepository;
 import gathering.msa.gathering.repository.GatheringRepository;
+import gathering.msa.outbox.OutboxEventPublisher;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -57,6 +63,7 @@ public class GatheringService {
     private final ImageServiceClient imageServiceClient;
     private final UserServiceClient userServiceClient;
     private final Snowflake snowflake = new Snowflake();
+    private final OutboxEventPublisher outboxEventPublisher;
 
     @Value("${server.url}")
     private String url;
@@ -73,6 +80,19 @@ public class GatheringService {
         gatheringRepository.save(gathering);
         enrollmentRepository.save(Enrollment.of(snowflake,true,gathering,userResponse, LocalDateTime.now()));
         gatheringCountRepository.save(GatheringCount.of(snowflake,gathering,1));
+
+        outboxEventPublisher.publish(EventType.GATHERING_CREATED,
+                GatheringCreatedEventPayload.builder()
+                        .id(gathering.getId())
+                        .title(gathering.getTitle())
+                        .content(gathering.getContent())
+                        .registerDate(gathering.getRegisterDate())
+                        .categoryId(category.getId())
+                        .userId(gathering.getUserId())
+                        .imageId(gathering.getImageId())
+                        .build(),
+                gathering.getId()
+                );
         return AddGatheringResponse.of(SUCCESS_CODE,SUCCESS_MESSAGE);
 
     }
@@ -89,6 +109,18 @@ public class GatheringService {
         boolean authorize = gathering.getUserId() == userResponse.getId();
         if(!authorize) throw new NotAuthorizeException("no authorize!!");
         gathering.changeGathering(updateGatheringRequest,saveImageResponse,category);
+        outboxEventPublisher.publish(EventType.GATHERING_UPDATED,
+                GatheringUpdateEventPayload.builder()
+                        .id(gathering.getId())
+                        .title(gathering.getTitle())
+                        .content(gathering.getContent())
+                        .registerDate(gathering.getRegisterDate())
+                        .categoryId(category.getId())
+                        .userId(gathering.getUserId())
+                        .imageId(gathering.getImageId())
+                        .build(),
+                gathering.getId()
+        );
         return UpdateGatheringResponse.of(SUCCESS_CODE,SUCCESS_MESSAGE);
     }
     public GatheringResponse fetchFeignGathering(Long gatheringId) {
@@ -108,6 +140,19 @@ public class GatheringService {
         List<GatheringDetailQuery> gatheringDetailQueries = gatheringRepository.gatheringDetail(gatheringId);
         if(gatheringDetailQueries.isEmpty()) throw new NotFoundGatheringException("no exist Gathering!!!");
         gatheringViewService.fetchCount(gatheringId);
+        outboxEventPublisher.publish(EventType.GATHERING_VIEW,
+                GatheringViewEventPayload.builder()
+                        .id(gatheringDetailQueries.getFirst().getId())
+                        .title(gatheringDetailQueries.getFirst().getTitle())
+                        .content(gatheringDetailQueries.getFirst().getContent())
+                        .registerDate(gatheringDetailQueries.getFirst().getRegisterDate())
+                        //TODO : 카테고리
+                        .categoryId(gatheringDetailQueries.getFirst().getId())
+                        .userId(gatheringDetailQueries.getFirst().getCreatedById())
+                        .imageId(gatheringDetailQueries.getFirst().getImageId())
+                        .build(),
+                gatheringDetailQueries.getFirst().getId()
+        );
         return getGatheringResponse(gatheringDetailQueries);
     }
     public GatheringPagingResponse gatheringCategory(String category, Integer pageNum, Integer pageSize, String username) {

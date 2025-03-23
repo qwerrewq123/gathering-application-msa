@@ -1,7 +1,9 @@
 package gathering.msa.outbox;
 
+import event.EventType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.event.EventListener;
 import org.springframework.data.domain.Pageable;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Async;
@@ -22,6 +24,20 @@ public class MessageRelay {
     private final MessageRelayCoordinator messageRelayCoordinator;
     private final KafkaTemplate<String, String> messageRelayKafkaTemplate;
 
+    @EventListener
+    public void handleChatMessageRequest(OutboxEvent outboxEvent) {
+        Outbox outbox = outboxEvent.getOutbox();
+        EventType eventType = outbox.getEventType();
+        if(eventType == EventType.CHAT_MESSAGE_CREATED){
+            outboxRepository.save(outbox);
+            publishNoTransactionEvent(outbox);
+        }
+        if(eventType == EventType.GATHERING_VIEW){
+            outboxRepository.save(outbox);
+            publishNoTransactionEvent(outbox);
+        }
+    }
+
     @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
     public void createOutbox(OutboxEvent outboxEvent) {
         log.info("[MessageRelay.createOutbox] outboxEvent={}", outboxEvent);
@@ -35,6 +51,23 @@ public class MessageRelay {
     }
 
     private void publishEvent(Outbox outbox) {
+        try {
+            messageRelayKafkaTemplate.send(
+                    outbox.getEventType().getTopic(),
+                    String.valueOf(outbox.getShardKey()),
+                    outbox.getPayload()
+            ).get(1, TimeUnit.SECONDS);
+            outboxRepository.delete(outbox);
+        } catch (Exception e) {
+            log.error("[MessageRelay.publishEvent] outbox={}", outbox, e);
+        }
+    }
+
+    @Async("messageRelayPublishEventExecutor")
+    public void publishNoTransactionEvent(Outbox outbox) {
+        if(outboxRepository.findById(outbox.getOutboxId()).isEmpty()){
+            return;
+        }
         try {
             messageRelayKafkaTemplate.send(
                     outbox.getEventType().getTopic(),

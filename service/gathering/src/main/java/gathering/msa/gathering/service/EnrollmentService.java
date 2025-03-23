@@ -4,6 +4,9 @@ import dto.response.enrollment.DisEnrollGatheringResponse;
 import dto.response.enrollment.EnrollGatheringResponse;
 import dto.response.gathering.GatheringResponse;
 import dto.response.user.UserResponse;
+import event.EventType;
+import event.payload.GatheringDisEnrollmentEventPayload;
+import event.payload.GatheringEnrollmentEventPayload;
 import exception.enrollment.AlreadyEnrollmentException;
 import exception.enrollment.NotFoundEnrollmentException;
 import exception.gathering.NotFoundGatheringException;
@@ -15,6 +18,7 @@ import gathering.msa.gathering.entity.GatheringCount;
 import gathering.msa.gathering.repository.EnrollmentRepository;
 import gathering.msa.gathering.repository.GatheringCountRepository;
 import gathering.msa.gathering.repository.GatheringRepository;
+import gathering.msa.outbox.OutboxEventPublisher;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,6 +39,7 @@ public class EnrollmentService {
     private final UserServiceClient userServiceClient;
     private final GatheringCountRepository gatheringCountRepository;
     private final Snowflake snowflake = new Snowflake();
+    private final OutboxEventPublisher outboxEventPublisher;
 
     public EnrollGatheringResponse enrollGathering(Long gatheringId, String username) {
 
@@ -48,6 +53,16 @@ public class EnrollmentService {
         enrollmentRepository.save(enrollment);
         GatheringCount gatheringCount = gatheringCountRepository.findByGathering(gatheringId).orElseThrow();
         gatheringCount.chagneCount(gatheringCount.getCount()+1);
+        outboxEventPublisher.publish(EventType.GATHERING_ENROLLMENT,
+                GatheringEnrollmentEventPayload.builder()
+                        .id(enrollment.getId())
+                        .accepted(enrollment.getAccepted())
+                        .gatheringId(gatheringId)
+                        .userId(enrollment.getUserId())
+                        .date(enrollment.getDate())
+                        .build(),
+                gatheringId
+                );
         return EnrollGatheringResponse.of(SUCCESS_CODE,SUCCESS_MESSAGE);
     }
 
@@ -61,6 +76,16 @@ public class EnrollmentService {
         enrollmentRepository.delete(enrollment);
         GatheringCount gatheringCount = gatheringCountRepository.findByGathering(gatheringId).orElseThrow();
         gatheringCount.chagneCount(gatheringCount.getCount()-1);
+        outboxEventPublisher.publish(EventType.GATHERING_DIS_ENROLLMENT,
+                GatheringDisEnrollmentEventPayload.builder()
+                        .id(enrollment.getId())
+                        .accepted(enrollment.getAccepted())
+                        .gatheringId(gatheringId)
+                        .userId(enrollment.getUserId())
+                        .date(enrollment.getDate())
+                        .build(),
+                gatheringId
+        );
         return DisEnrollGatheringResponse.of(SUCCESS_CODE,SUCCESS_MESSAGE);
     }
 }
