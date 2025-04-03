@@ -19,4 +19,11 @@ public class Recommend {
     @Column(name = "gathering_id")
     private Long gatheringId;
     private int score;
+
+    public static Recommend of(Long gatheringId, int score) {
+        return Recommend.builder()
+                .gatheringId(gatheringId)
+                .score(score)
+                .build();
+    }
 }

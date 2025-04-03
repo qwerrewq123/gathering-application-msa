@@ -59,14 +59,12 @@ public class AuthorizationHeaderFilter extends AbstractGatewayFilterFactory<Auth
             String authorizationHeader = request.getHeaders().get(HttpHeaders.AUTHORIZATION).get(0);
             String jwt = authorizationHeader.replace("Bearer ", "");
             String findJwt = jwtRepository.read(jwt);
-            if(findJwt!=null){
-                //TODO : 로직처리
+            if(findJwt != null){
                 return chain.filter(exchange);
             }
             if (!isJwtValid(jwt)) {
                 return onError(exchange, HttpStatus.UNAUTHORIZED);
             }
-            //TODO : clientId 확인
             jwtRepository.createOrUpdate(1L,jwt);
             return chain.filter(exchange);
         };

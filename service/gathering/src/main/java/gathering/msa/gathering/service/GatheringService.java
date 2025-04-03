@@ -134,20 +134,19 @@ public class GatheringService {
 
 
     public GatheringResponse gatheringDetail(Long gatheringId, String username) throws IOException {
-        //TODO : response 모두 고치기
         UserResponse userResponse = userServiceClient.fetchUserByUsername(username);
         if(!userResponse.getCode().equals(SUCCESS_CODE)) throw new NotFoundUserException("no exist User!!");
         List<GatheringDetailQuery> gatheringDetailQueries = gatheringRepository.gatheringDetail(gatheringId);
         if(gatheringDetailQueries.isEmpty()) throw new NotFoundGatheringException("no exist Gathering!!!");
         gatheringViewService.fetchCount(gatheringId);
+        Category category = categoryRepository.findByName(gatheringDetailQueries.get(0).getCategory()).orElseThrow(() -> new NotFoundCategoryException("no exist Category!!"));
         outboxEventPublisher.publish(EventType.GATHERING_VIEW,
                 GatheringViewEventPayload.builder()
                         .id(gatheringDetailQueries.getFirst().getId())
                         .title(gatheringDetailQueries.getFirst().getTitle())
                         .content(gatheringDetailQueries.getFirst().getContent())
                         .registerDate(gatheringDetailQueries.getFirst().getRegisterDate())
-                        //TODO : 카테고리
-                        .categoryId(gatheringDetailQueries.getFirst().getId())
+                        .categoryId(category.getId())
                         .userId(gatheringDetailQueries.getFirst().getCreatedById())
                         .imageId(gatheringDetailQueries.getFirst().getImageId())
                         .build(),
@@ -306,5 +305,16 @@ public class GatheringService {
     }
     private String getUrl(String fileUrl){
         return url+fileUrl;
+    }
+
+    public GatheringResponses fetchFeignGatherings(List<Long> gatheringIds) {
+        Page<GatheringResponseQuery> page = gatheringRepository.findByIds(gatheringIds);
+        List<GatheringResponseElement> content = page.map(query -> GatheringResponseElement.of(query)).getContent();
+        return GatheringResponses.builder()
+                .code(SUCCESS_CODE)
+                .message(SUCCESS_MESSAGE)
+                .content(content)
+                .build();
+
     }
 }

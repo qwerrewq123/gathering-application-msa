@@ -2,6 +2,7 @@ package gathering.msa.gathering.repository;
 
 import dto.response.gathering.EntireGatheringsQuery;
 import dto.response.gathering.GatheringDetailQuery;
+import dto.response.gathering.GatheringResponseQuery;
 import dto.response.gathering.GatheringsQuery;
 import gathering.msa.gathering.entity.Gathering;
 import org.springframework.data.domain.Page;
@@ -10,7 +11,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.lang.ScopedValue;
 import java.util.List;
+import java.util.Optional;
 
 
 public interface GatheringRepository extends JpaRepository<Gathering, Long> {
@@ -43,4 +46,8 @@ public interface GatheringRepository extends JpaRepository<Gathering, Long> {
             ") as subquery " +
             "where rownum between 1 and 9", nativeQuery = true)
     List<EntireGatheringsQuery> gatherings(@Param("title") String title);
+    @Query("select new dto.response.gathering.GatheringResponseQuery(g.id,g.title,g.content,g.registerDate,c.name,g.userId,g.imageId,gc.count) " +
+            "from Gathering g left join g.category c left join GatheringCount  gc " +
+            "where g.id in :gatheringIds")
+    Page<GatheringResponseQuery> findByIds(List<Long> gatheringIds);
 }

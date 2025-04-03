@@ -15,7 +15,6 @@ public class GatheringViewRepository {
     private final BackUpGatheringViewRepository backUpGatheringViewRepository;
     private static final String KEY_FORMAT = "gathering::view::%s::gathering-count";
     private final Snowflake snowflake = new Snowflake();
-    //TODO : 조회수 처리 로직 동시성 고려, backup
     public Integer fetchCount(Long gatheringId, Duration ttl) {
         String key = generateKey(gatheringId);
         if(redisTemplate.opsForValue().get(key) == null){
@@ -26,7 +25,7 @@ public class GatheringViewRepository {
                 return 1;
             }
             redisTemplate.opsForValue().set(key, String.valueOf(count+1), ttl);
-            return 1;
+            return Integer.parseInt(redisTemplate.opsForValue().get(key));
 
         }else{
             Long count = redisTemplate.opsForValue().increment(key);

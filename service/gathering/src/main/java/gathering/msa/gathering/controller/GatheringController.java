@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -41,6 +42,12 @@ public class GatheringController {
     public ResponseEntity<GatheringResponse> fetchFeignGathering(@PathVariable Long gatheringId) {
         GatheringResponse gatheringResponse = gatheringService.fetchFeignGathering(gatheringId);
         return new ResponseEntity<>(gatheringResponse, HttpStatus.OK);
+    }
+
+    @GetMapping("/feign/gathering")
+    public ResponseEntity<GatheringResponses> fetchFeignGatherings(@RequestParam List<Long> gatheringIds) {
+        GatheringResponses gatheringResponses = gatheringService.fetchFeignGatherings(gatheringIds);
+        return new ResponseEntity<>(gatheringResponses, HttpStatus.OK);
     }
 
     @GetMapping("/gathering/{gatheringId}")

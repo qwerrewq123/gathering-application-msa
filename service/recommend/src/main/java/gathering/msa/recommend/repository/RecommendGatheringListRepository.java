@@ -15,6 +15,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Set;
 
 import static util.ConstClass.*;
 
@@ -36,6 +37,11 @@ public class RecommendGatheringListRepository {
             return null;
         });
     }
+    public Set<ZSetOperations.TypedTuple<String>> findAll(LocalDateTime time) {
+        String key = generateKey(time);
+        return redisTemplate.opsForZSet().rangeWithScores(key, 0, -1);
+    }
+
 
     public void remove(Long articleId, LocalDateTime time) {
         redisTemplate.opsForZSet().remove(generateKey(time), String.valueOf(articleId));
@@ -50,12 +56,11 @@ public class RecommendGatheringListRepository {
     }
 
     public RecommendGatheringResponse readAll(String dateStr) {
-        //TODO : openfeign 요청하는거 변경
-//        return redisTemplate.opsForZSet()
-//                .reverseRangeWithScores(generateKey(dateStr), 0, -1).stream()
-//                .map(ZSetOperations.TypedTuple::getValue)
-//                .map(Long::valueOf)
-//                .toList();
+        List<Long> listIds = redisTemplate.opsForZSet()
+                .reverseRangeWithScores(generateKey(dateStr), 0, -1).stream()
+                .map(ZSetOperations.TypedTuple::getValue)
+                .map(Long::valueOf)
+                .toList();
         return RecommendGatheringResponse.of(SUCCESS_CODE,SUCCESS_MESSAGE,null);
     }
 }
